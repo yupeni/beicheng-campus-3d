@@ -543,6 +543,7 @@ for (let i = 0; i < BOUNDARY.length; i++) {
   let cur = 0; const segs = [];
   for (const c of cuts) { const hw = c.g.half || 5; segs.push([cur, c.t - hw - (c.g.cutBack || 0)]); cur = c.t + hw; }
   segs.push([cur, L]);
+  if (i === 3) for (const sg of segs) sg[1] = Math.min(sg[1], 14); // 北成路口 (機車通道、紅磚廣場、汽車入口) 前不設圍牆，對街開放 (實景)
   for (const [s0, s1] of segs) {
     if (s1 - s0 < 0.5) continue;
     const mx = ax + ux * (s0 + s1) / 2; const mn = an + un * (s0 + s1) / 2;
