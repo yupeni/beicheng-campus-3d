@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>北成國小 3D 互動校園導覽</title>
+<meta name="description" content="宜蘭縣羅東鎮北成國小 115 學年度校園及校舍配置圖的 3D 互動導覽，含周邊道路、教室搜尋與樓層篩選">
+<style>
+  :root {
+    --bg: #eef0f2; --panel: rgba(255,255,255,.94); --ink: #1b2630; --muted: #5f6e7a; --line: rgba(27,38,48,.12);
+    --accent: #f5a800; --accent-ink: #1b2630; --blue: #2f6fe4; --chip: rgba(27,38,48,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #11161c; --panel: rgba(14,19,26,.93); --ink: #eef2f5; --muted: #98a8b5; --line: rgba(255,255,255,.14); --chip: rgba(255,255,255,.08); }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+    font: 14px/1.5 -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+  .panel { background: var(--panel); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.2); }
+  button, a.btn { font: inherit; color: inherit; background: transparent; border: 0; border-radius: 10px; padding: 7px 12px; cursor: pointer; min-height: 36px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  button:hover, a.btn:hover { background: var(--line); }
+  button:focus-visible, a.btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  a.maps { background: var(--blue); color: #fff; font-weight: 600; } a.maps:hover { background: #2559b9; }
+
+  header { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; gap: 8px; align-items: center; z-index: 5; pointer-events: none; }
+  header > * { pointer-events: auto; }
+  .title { display: flex; gap: 10px; align-items: center; padding: 8px 14px 8px 8px; }
+  .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 18px; }
+  .title b { display: block; font-size: 15px; line-height: 1.2; } .title small { display: block; color: var(--muted); font-size: 11px; }
+  .bar { display: flex; gap: 4px; padding: 4px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+
+  #side { position: fixed; top: 74px; left: 10px; bottom: 10px; width: 250px; z-index: 4; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  #side h2 { font-size: 11px; margin: 8px 6px 2px; color: var(--muted); font-weight: 700; letter-spacing: .1em; }
+  #searchbox { position: relative; }
+  #search { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: inherit; }
+  #results { position: absolute; left: 0; right: 0; top: 44px; z-index: 6; max-height: 320px; overflow: auto; padding: 4px; }
+  #results[hidden], #legend[hidden], #info[hidden], #walk-hint[hidden] { display: none; }
+  #results .none { padding: 10px; color: var(--muted); }
+  .scroll { overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+  #list button, #places button, #results button { width: 100%; justify-content: space-between; text-align: left; }
+  em { font-style: normal; color: var(--muted); font-size: 12px; }
+  .nm { font-weight: 600; }
+
+  #floors { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); z-index: 4; display: flex; flex-direction: column; padding: 4px; gap: 2px; }
+  #floors button { justify-content: center; min-width: 52px; }
+  #legend { position: fixed; right: 76px; top: 74px; z-index: 4; width: 250px; padding: 10px; }
+  #legend h3 { margin: 2px 6px 6px; font-size: 12px; color: var(--muted); }
+  #legend-list { display: flex; flex-direction: column; gap: 1px; }
+  #legend-list button { justify-content: flex-start; min-height: 32px; padding: 4px 8px; }
+  #legend h4 { margin: 10px 6px 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .lg { display: flex; align-items: center; gap: 8px; padding: 3px 8px; font-size: 13px; }
+  .lg i, #legend-list i { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,.25); }
+
+  #info { position: fixed; right: 76px; top: 74px; width: 300px; max-height: calc(100% - 270px); overflow: auto; padding: 14px 16px; z-index: 5; }
+  body:has(#legend:not([hidden])) #info { top: 330px; max-height: calc(100% - 520px); }
+  #info-head { display: flex; gap: 10px; align-items: center; padding-right: 30px; }
+  #info-tag { background: #e8704f; color: #fff; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
+  #info-title { margin: 0; font-size: 20px; } #info-sub { margin: 4px 0 8px; color: var(--muted); font-size: 12px; }
+  #info-close { position: absolute; top: 8px; right: 8px; width: 32px; padding: 0; justify-content: center; }
+  .fact { display: grid; grid-template-columns: 54px 1fr; padding: 6px 0; border-top: 1px solid var(--line); } .fact span { color: var(--muted); }
+  .more { margin-top: 8px; background: var(--chip); border: 1px solid var(--line); }
+  .fl { display: grid; grid-template-columns: 32px 1fr; gap: 6px; padding: 8px 0; border-top: 1px solid var(--line); } .fl > b { color: var(--blue); padding-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { --c: #ccc; min-height: 28px; padding: 2px 8px; font-size: 13px; background: color-mix(in srgb, var(--c) 35%, transparent); border: 1px solid color-mix(in srgb, var(--c) 70%, transparent); }
+
+  #minimap { position: fixed; right: 76px; bottom: 10px; width: 150px; height: 160px; z-index: 4; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 8px 28px rgba(0,0,0,.2); cursor: crosshair; }
+  #compass { position: fixed; right: 10px; bottom: 10px; width: 58px; height: 58px; z-index: 4; border-radius: 50%; }
+  #compass-needle { position: relative; width: 100%; height: 100%; }
+  #compass-needle::before { content: "北"; position: absolute; top: 3px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 800; color: #e0452b; }
+  #compass-needle::after { content: ""; position: absolute; left: 50%; top: 20px; width: 3px; height: 18px; margin-left: -1.5px; background: #e0452b; border-radius: 2px; }
+  #walk-hint { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 8px 16px; z-index: 5; text-align: center; }
+  #foot { position: fixed; left: 270px; bottom: 6px; z-index: 3; font-size: 11px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); pointer-events: none; }
+  #foot a { color: #fff; pointer-events: auto; }
+  #touchpad { position: fixed; left: 16px; bottom: 24px; display: none; grid-template: repeat(3, 52px) / repeat(3, 52px); gap: 4px; z-index: 6; }
+  #touchpad button { background: var(--panel); border: 1px solid var(--line); font-size: 20px; padding: 0; justify-content: center; touch-action: none; }
+  #t-up { grid-area: 1 / 2; } #t-left { grid-area: 2 / 1; } #t-right { grid-area: 2 / 3; } #t-down { grid-area: 3 / 2; }
+  body.walking.touch #touchpad { display: grid; }
+  body.walking #side, body.walking #floors, body.walking #legend { display: none; }
+  body.walking #foot { left: 10px; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 9; color: var(--muted); }
+  #btn-side { display: none; }
+  @media (max-width: 860px) {
+    .title small, .hide-sm { display: none; }
+    header { flex-wrap: wrap; } .bar { margin-left: 0; }
+    #btn-side { display: inline-flex; }
+    #side { top: 120px; transform: translateX(-120%); transition: transform .2s; z-index: 7; }
+    #side.open { transform: none; }
+    #floors { top: auto; bottom: 90px; transform: none; flex-direction: row; right: 10px; }
+    #floors button { min-width: 0; padding: 6px 8px; }
+    #legend { top: 120px; right: 10px; }
+    #info, body:has(#legend:not([hidden])) #info { top: auto; bottom: 140px; left: 10px; right: 10px; width: auto; max-height: 40vh; }
+    #minimap, #compass { display: none; } #foot { left: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/" } }
+</script>
+</head>
+<body>
+<canvas id="scene" tabindex="0" aria-label="北成國小 3D 校園場景"></canvas>
+
+<header>
+  <div class="panel title"><div class="logo">北</div><div><b>北成國小 3D 互動校園導覽</b><small>宜蘭縣羅東鎮・115 學年度校舍配置</small></div></div>
+  <div class="panel bar" role="toolbar" aria-label="檢視控制">
+    <button id="btn-side" type="button">建築</button>
+    <button id="btn-home" type="button">全景</button>
+    <button id="btn-orbit" class="on" type="button">空拍</button>
+    <button id="btn-walk" type="button">漫遊</button>
+    <button id="btn-spin" type="button" class="hide-sm">旋轉</button>
+    <button id="btn-labels" type="button">標籤</button>
+    <button id="btn-legend" type="button">圖例</button>
+    <a id="btn-maps" class="btn maps" target="_blank" rel="noopener noreferrer" href="#">Google 地圖</a>
+    <button id="btn-night" type="button">☾ 夜晚</button>
+  </div>
+</header>
+
+<aside id="side" class="panel" aria-label="校園導覽">
+  <div id="searchbox"><input id="search" type="search" placeholder="找教室：教務處、505、游泳池…" autocomplete="off" aria-label="搜尋教室"><div id="results" class="panel" hidden></div></div>
+  <h2>建築</h2>
+  <div id="list" class="scroll"></div>
+  <h2>校門</h2>
+  <div id="places" class="scroll" style="flex:none;max-height:150px"></div>
+</aside>
+
+<div id="floors" class="panel" role="group" aria-label="樓層篩選"></div>
+
+<section id="legend" class="panel" hidden><h3>教室類別（點選可單獨顯示）</h3><div id="legend-list"></div></section>
+
+<section id="info" class="panel" hidden aria-live="polite">
+  <button id="info-close" type="button" aria-label="關閉">✕</button>
+  <div id="info-head"><span id="info-tag" hidden></span><h3 id="info-title"></h3></div>
+  <p id="info-sub"></p>
+  <div id="info-facts"></div>
+  <div id="info-rooms"></div>
+</section>
+
+<div id="compass" class="panel" aria-hidden="true"><div id="compass-needle"></div></div>
+<canvas id="minimap" width="300" height="320" aria-label="小地圖，點擊可飛往該處"></canvas>
+<div id="walk-hint" class="panel" hidden>W A S D 移動 ・ 滑鼠看向 ・ Shift 快跑 ・ Esc 回到空拍</div>
+<div id="touchpad" aria-label="移動方向">
+  <button id="t-up" type="button" aria-label="前進">▲</button><button id="t-left" type="button" aria-label="左移">◀</button>
+  <button id="t-right" type="button" aria-label="右移">▶</button><button id="t-down" type="button" aria-label="後退">▼</button>
+</div>
+<div id="foot">校舍依學校配置圖建模，位置為示意・道路與周邊建物 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors</div>
+<div id="loading">載入校園中…</div>
+<script>
+  if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+</script>
+<script type="module" src="./campus.js"></script>
+</body>
+</html>
