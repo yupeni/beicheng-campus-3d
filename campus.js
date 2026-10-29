@@ -378,18 +378,21 @@ const statue = (x, z, bodyCol, headCol, h = 2) => { // 卡通人偶 (校園吉�
   { // 通道上的咖啡色鐵管加鋼網拉門 (街景所見)
     const dirx = dxl / Ld; const dirn = dnl / Ld; const nx = dnl / Ld; const nn = -dxl / Ld; // 右法線 (朝牆外)
     const P0 = (t, dd) => [diag[0][0] + dirx * t + nx * dd, diag[0][1] + dirn * t + nn * dd];
-    const rot = Math.atan2(nn, nx); const gt = 8; // 第一門：通道入口 (靠北成路口)
+    const rot = Math.atan2(nn, nx); const gt = 24; // 第一門：鐵管拉門在通道內側，入口 (路口) 保持敞開
     const a = P0(gt, 0.4); const b = P0(gt, -7.6); const mid = P0(gt, -3.6);
     const rail = 0x5a3d33;
-    for (const q of [a, b]) solidBox(0.55, 3.4, 0.55, 0x6d6a66, q[0], 1.7, -q[1], rot); // 水泥門柱
-    solidBox(8.4, 0.22, 0.45, rail, mid[0], 3.35, -mid[1], rot); // 門楣
-    for (const hgt of [0.5, 1.5, 2.7]) solidBox(7.6, 0.14, 0.14, rail, mid[0], hgt, -mid[1], rot);
+    for (const q of [a, b]) solidBox(0.28, 2.6, 0.28, rail, q[0], 1.3, -q[1]);
+    for (const hgt of [0.9, 2.1]) solidBox(7.6, 0.12, 0.12, rail, mid[0], hgt, -mid[1], rot);
+    for (let k = 0; k < 7; k++) { // 通道入口的綠白斑馬線 (實景)
+      const bp = P0(3, 0.1 - 1.15 * k - 0.4); const bar = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.03, 3), new THREE.MeshBasicMaterial({ color: k % 2 ? 0xf2f2ee : 0x4aa27a }));
+      bar.position.set(bp[0], 0.1, -bp[1]); bar.rotation.y = Math.atan2(dirx, -dirn); scene.add(bar);
+    }
     const cvm = document.createElement('canvas'); cvm.width = 64; cvm.height = 64; const cm = cvm.getContext('2d'); cm.strokeStyle = '#2b2623'; cm.lineWidth = 2; cm.strokeRect(0, 0, 64, 64);
-    const tm = new THREE.CanvasTexture(cvm); tm.wrapS = tm.wrapT = THREE.RepeatWrapping; tm.repeat.set(16, 5);
-    const meshG = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 2.4), new THREE.MeshBasicMaterial({ map: tm, transparent: true, alphaTest: 0.2, side: THREE.DoubleSide }));
-    meshG.position.set(mid[0], 1.6, -mid[1]); meshG.rotation.y = rot; scene.add(meshG);
+    const tm = new THREE.CanvasTexture(cvm); tm.wrapS = tm.wrapT = THREE.RepeatWrapping; tm.repeat.set(16, 3);
+    const meshG = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 1.4), new THREE.MeshBasicMaterial({ map: tm, transparent: true, alphaTest: 0.2, side: THREE.DoubleSide }));
+    meshG.position.set(mid[0], 1.5, -mid[1]); meshG.rotation.y = rot; scene.add(meshG);
   }
-  { const gp = [diag[0][0] + (dxl / Ld) * 8 + (dnl / Ld) * -3.6, diag[0][1] + (dnl / Ld) * 8 + (-dxl / Ld) * -3.6]; const sp = textSprite('第一門（機車通道）', { scale: 0.75 }); sp.position.set(gp[0], 5, -gp[1]); scene.add(sp); bigLabels.push({ sp, near: 0 }); gateInfo.push({ name: '第一門', x: gp[0], z: -gp[1] }); }
+  { const gp = [diag[0][0] + (dxl / Ld) * 24 + (dnl / Ld) * -3.6, diag[0][1] + (dnl / Ld) * 24 + (-dxl / Ld) * -3.6]; const sp = textSprite('第一門（機車通道）', { scale: 0.75 }); sp.position.set(gp[0], 5, -gp[1]); scene.add(sp); bigLabels.push({ sp, near: 0 }); gateInfo.push({ name: '第一門', x: gp[0], z: -gp[1] }); }
   // 牆外椰子樹 (王棕) 一排
   const out = offsetLine(diag, 3.2); const spots = [];
   for (let t = 4; t < Ld - 4; t += 7.5) spots.push([out[0][0] + (dxl / Ld) * t, -(out[0][1] + (dnl / Ld) * t), 11 + ((t * 7) % 3)]);
