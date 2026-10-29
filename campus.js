@@ -410,7 +410,7 @@ const statue = (x, z, bodyCol, headCol, h = 2) => { // 卡通人偶 (校園吉�
     bar.rotation.x = -Math.PI / 2; bar.rotation.z = Math.atan2(rdx, rdn) + Math.PI / 2; bar.position.set(pxn, 0.1, -pn); scene.add(bar);
   }
   // 資源回收室：木色小門 + 白色直條拉門
-  const rr = R(rW(-87, 80, -76, 73));
+  const rr = R(rW(-75.5, 79.5, -64.5, 72.5));
   solidBox(2.2, 2.2, 0.12, 0x8a6a4a, rr.x1 + 0.05, 1.1, rr.z - 1.5); solidBox(3.2, 2.0, 0.1, 0xe9e5da, rr.x1 + 0.05, 1.0, rr.z + 1.6);
 }
 
@@ -513,6 +513,25 @@ const statue = (x, z, bodyCol, headCol, h = 2) => { // 卡通人偶 (校園吉�
   for (let i = 0; i <= 4; i++) solidBox(0.22, 0.22, 3.2, 0x2f6fd0, x0 + 0.5 + i * 2.25, 3.5, cz);
   const roofP = new THREE.Mesh(new THREE.BoxGeometry(10.8, 0.06, 3.4), new THREE.MeshStandardMaterial({ color: 0xe3eef2, transparent: true, opacity: 0.6 })); roofP.position.set(cx, 3.68, cz); scene.add(roofP);
   const sp = textSprite('司令台', { scale: 0.8 }); sp.position.set(cx, 7, cz); scene.add(sp); bigLabels.push({ sp, near: 0 }); gateInfo.push({ name: '司令台', x: cx, z: cz });
+}
+
+{ // 北成路口細節 (依實景)：交通號誌、綠色路燈、路錐、禁行標誌
+  const signal = (x, z, rotY) => {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 5.6, 10), new THREE.MeshStandardMaterial({ color: 0x8f9296 })); pole.position.y = 2.8; g.add(pole);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 1.1, 10), new THREE.MeshStandardMaterial({ color: 0xf2c230 })); base.position.y = 0.55; g.add(base);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0x8f9296 })); arm.position.set(1.6, 5.4, 0); g.add(arm);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.3, 0.4), new THREE.MeshStandardMaterial({ color: 0x2f7d4f })); head.position.set(3.0, 5.2, 0); g.add(head);
+    [[0xd8342c, 5.55], [0xf2c230, 5.2], [0x3bb273, 4.85]].forEach(([col, y]) => { const l = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), new THREE.MeshBasicMaterial({ color: col })); l.position.set(3.0, y, 0.22); g.add(l); const l2 = l.clone(); l2.position.z = -0.22; g.add(l2); });
+    const cam = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.5), new THREE.MeshStandardMaterial({ color: 0xdddddd })); cam.position.set(0.3, 4.6, 0.25); g.add(cam);
+    g.position.set(x, 0, z); g.rotation.y = rotY; g.traverse((o) => { if (o.isMesh) o.castShadow = true; }); scene.add(g);
+  };
+  signal(-67.7, -91.2, Math.PI / 2);            // 路口分隔島上的交通號誌桿
+  const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 8, 10), new THREE.MeshStandardMaterial({ color: 0x4f8f5a })); lamp.position.set(-69.6, 4, -93.4); lamp.castShadow = true; scene.add(lamp);
+  const lampArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 2.4), new THREE.MeshStandardMaterial({ color: 0x4f8f5a })); lampArm.position.set(-69.6, 8, -94.6); scene.add(lampArm);
+  for (const [cx2, cn2] of [[-72.66, 98.2], [-68.3, 92.8]]) { const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 12), new THREE.MeshStandardMaterial({ color: 0xf07a2a })); cone.position.set(cx2, 0.35, -cn2); cone.castShadow = true; scene.add(cone); }
+  const ne = new THREE.Mesh(new THREE.CircleGeometry(0.38, 20), new THREE.MeshBasicMaterial({ color: 0xd8342c, side: THREE.DoubleSide })); ne.position.set(-85.9, 1.9, -87.5); ne.rotation.y = 0.675; scene.add(ne);
+  const bar2 = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.1), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })); bar2.position.copy(ne.position); bar2.position.x += 0.02; bar2.rotation.y = 0.675; scene.add(bar2);
 }
 
 // 圍牆 (磚紅矮牆)：在校門位置留缺口
